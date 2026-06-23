@@ -58,7 +58,7 @@ Most beginner data projects either hardcode static data or naively re-pull every
 
 ## Database schema
 
-**coin_prices** — the core data table
+**coin_prices** - the core data table
 | Column | Type |
 |---|---|
 | id | TEXT (PRIMARY KEY) |
@@ -71,13 +71,13 @@ Most beginner data projects either hardcode static data or naively re-pull every
 | price_change_percentage_24h | NUMERIC |
 | last_updated | TIMESTAMP |
 
-**pipeline_watermark** — tracks incremental load progress
+**pipeline_watermark** - tracks incremental load progress
 | Column | Type |
 |---|---|
 | pipeline_name | TEXT (PRIMARY KEY) |
 | last_pulled_at | TIMESTAMP |
 
-**pipeline_logs** — run history
+**pipeline_logs** - run history
 | Column | Type |
 |---|---|
 | id | SERIAL (PRIMARY KEY) |
