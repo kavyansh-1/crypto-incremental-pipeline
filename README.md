@@ -54,6 +54,8 @@ Most beginner data projects either hardcode static data or naively re-pull every
 ├── db.py           # Database connection, watermark read/write, run logging
 ├── .env.example    # Template for required environment variables
 └── README.md
+├── dags/
+│   └── crypto_pipeline_dag.py   # Airflow DAG definition
 ```
 
 ## Database schema
@@ -182,3 +184,38 @@ LIMIT 10;
 - Schedule this pipeline to run automatically with a cron job or Apache Airflow
 - Containerize with Docker for portable deployment
 - Add a lightweight dashboard (e.g. Streamlit) to visualize price trends over time
+
+## Orchestration with Apache Airflow
+
+This pipeline is orchestrated using Apache Airflow rather than being run manually. Airflow schedules the pipeline to run daily, tracks every run's status, and allows manual triggering through a web dashboard.
+
+**Why this matters:** real companies don't rely on someone remembering to run a script - they use an orchestrator like Airflow (or Dagster/Prefect) to schedule, monitor, and surface failures automatically.
+
+### DAG structure
+
+```
+crypto_incremental_pipeline (DAG)
+   └── extract_and_load_crypto_data (PythonOperator)
+            calls load.run_pipeline()
+```
+
+The DAG is intentionally thin - it imports and calls the existing `run_pipeline()` function from `load.py` rather than duplicating any pipeline logic. This keeps the orchestration layer (Airflow) cleanly separated from the actual ETL logic (the pipeline itself), which is how this separation is typically handled in real data engineering teams.
+
+### Running it locally
+
+Apache Airflow requires a Linux environment (it depends on Unix-only system calls), so on Windows this runs via WSL (Windows Subsystem for Linux).
+
+```bash
+# Inside WSL/Ubuntu
+cd ~/projects/airflow-project
+source .venv/bin/activate
+airflow standalone
+```
+
+This single command initializes Airflow's metadata database, creates an admin user, and starts both the webserver and scheduler. Visit `http://localhost:8080` to view the dashboard, see run history, inspect logs per task, and manually trigger runs.
+
+The DAG file itself lives in [`dags/crypto_pipeline_dag.py`](dags/crypto_pipeline_dag.py) and needs to be placed in (or symlinked to) Airflow's `~/airflow/dags/` folder to be picked up by the scheduler.
+
+### Schedule
+
+The DAG is set to run `@daily`, with `catchup=False` so it only runs going forward from when it's activated, rather than backfilling historical runs - appropriate for a live price-tracking pipeline where historical "catch-up" runs wouldn't reflect real prices anyway.
